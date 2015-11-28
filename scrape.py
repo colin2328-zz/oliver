@@ -37,6 +37,10 @@ br.form['Proximity'] = ['50']
 br.form['Product'] = ['PPO']
 
 
-html = br.submit()
+br.submit()
 
-print br.response().read()
+html = br.response().read()
+
+text_file = open("scrape.html", "w")
+text_file.write(html)
+text_file.close()

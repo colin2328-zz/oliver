@@ -1,0 +1,3400 @@
+<!DOCTYPE doctype html>
+<!--[if lt IE 7]> <html class="no-js ie lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js ie lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]> <html class="no-js ie" lang="en"> <!--<![endif]-->
+<head>
+ <title>
+  National Doctor and Hospital Finder
+ </title>
+ <!-- stylesheets -->
+ <link href="/Content/global.css" rel="stylesheet"/>
+ <link href="/Content/theme.css" rel="stylesheet"/>
+ <link href="/Content/client.css" rel="stylesheet"/>
+ <link href="/Content/uniform.css" rel="stylesheet"/>
+ <link href="http://fonts.googleapis.com/css?family=Magra" rel="stylesheet" type="text/css"/>
+ <!--[if IE]>
+    <script type="text/javascript" src="/Scripts/modernizr.custom.js"></script>
+
+    <link rel="stylesheet" href="/Content/ie.css" type="text/css" />
+	<![endif]-->
+ <!-- Javascript Libraries and Drivers -->
+ <script type="text/javascript">
+  var CompareAction = '/Compare/';
+        var DefaultAction = '/Landing/';
+        var ProfileAction = '/Profile/';
+        var CostAction = '/Cost/';
+        var DirectoryAction = '/Directory/';
+        var LoginAction = '/Login/';
+        var MOPAction = '/MOP/';
+        var PatientReviewsAction = '/PatientReviews/';
+        var ResultsAction = '/Results/';
+        var siteType = '';
+        var hostNameCode = 'BCBS';
+        var currentLanguage = '';
+        var isLocalSearch = '';
+        var selectedPlanValue = '';
+        var PopularSearch = 'False';
+        var TypeAhead = 'False';
+        var DirectionInNetwork = '';
+        var WarningInNetwork = '';
+        var DirectionOutNetwork = '';
+        var WarningOutNetwork = '';
+
+        if(hostNameCode == "BCBSND" || hostNameCode == "BLUEKC")
+        {
+            DirectionInNetwork = '';
+            WarningInNetwork = '';
+            DirectionOutNetwork = '';
+            WarningOutNetwork = '';
+        }
+ </script>
+ <script src="/Scripts/jquery-1.7.2.min.js">
+ </script>
+ <script src="/Scripts/jquery-ui-1.8.14.custom.min.js">
+ </script>
+ <script src="/Scripts/bootstrap.min.js">
+ </script>
+ <script src="/Scripts/jquery.autocomplete.js">
+ </script>
+ <script src="/Scripts/jquery.jtruncate.pack.js">
+ </script>
+ <script src="/Scripts/lib.global.js">
+ </script>
+ <script src="/Scripts/jquery.uniform.min.js">
+ </script>
+ <script src="/Scripts/bootstrap-multiselect.js">
+ </script>
+ <script src="/Scripts/webtrendsProd.js" type="text/javascript">
+ </script>
+ <script src="/Scripts/forsee-prod.js" type="text/javascript">
+ </script>
+ <script type="text/javascript">
+  var timeoutMessage = 'Our site has a session time-out of 30 minutes, and you have been inactive for 25 minutes.  Please click "OK" if you would like to continue your session or click "Cancel" to start a new session.<div><a class="save-button" id="cancelSession">Cancel</a><a style="margin-right:10px;" class="save-button" id="continueSession">OK</a></div>';
+        var idleTime = 0;
+        $(document).ready(function () {
+            var messageContent = '';
+
+            var idleInterval = setInterval(timerIncrement, 60000); // 1 minute
+
+            $(this).mousemove(function (e) {
+                idleTime = 0;
+            });
+            $(this).keypress(function (e) {
+                idleTime = 0;
+                //alert('here');
+            });
+            $(this).click(function (e) {
+                idleTime = 0;
+            });
+
+            $("#continueSession").live("click", function () {
+                window.location.reload();
+            });
+
+            $("#cancelSession").live("click", function () {
+                window.location = DefaultAction + 'logout';
+            });
+                
+            if (messageContent.length > 0) {
+                ShowMessage('<p>' + messageContent + '</p>', 'small');
+            }
+        });
+
+        //Show timeout message after 25 mins
+        //setTimeout('ShowTimeoutMessage();', 25 * 60 * 1000);
+  
+        function ShowTimeoutMessage() {
+            self.focus();
+            if (confirm(timeoutMessage)) {
+                window.location.reload();
+            }
+            else {
+                window.location = '/';
+            }
+        }
+
+        function timerIncrement() {
+            idleTime = idleTime + 1;
+            if (idleTime == 25) { // 25 minutes
+                ShowMessage(timeoutMessage, 'small');
+            }
+            else if (idleTime >= 30)
+            {
+                window.location = DefaultAction + 'logout';
+            }
+        }
+ </script>
+ <link href="/Content/results.css" rel="stylesheet" type="text/css"/>
+ <style>
+  .loader-mop {
+            position: relative !important;
+        }
+ </style>
+ <script src="/Scripts/lib.results.js" type="text/javascript">
+ </script>
+ <script src="/Scripts/lib.search.js" type="text/javascript">
+ </script>
+ <!-- _FindAProvider_PlanByState -->
+ <script type="text/javascript">
+  $(document).ready(function () {
+                $("[name=SearchType]").change(function () {
+                    SetFormState();
+                    GetPlans();
+                });
+            });
+
+            function GetPlans() {
+                var searchType = $("#SearchType").val();
+                //call GetPlans based upon Search Type
+                var html = $.ajax({ url: encodeURI("GetPlans?searchType=" + searchType), async: false }).responseText;
+                $("#planContainer").html(html);
+                if (html.indexOf("NORESULTS") != -1)
+                    ShowMessage(messageNoProducts, "noResults", undefined, messageNoProductsTitle);
+
+                //Set the search Labels and Placeholders
+                SetSearchLabels(searchType);
+            };
+
+            //Logic to build search form element based on the state - Amerigroup - Search Criteria
+            function SetFormState() {
+                var selectedIndex = $("#SearchType").prop("selectedIndex");
+                EnableState($(".dashBoardContainer input[name='Address']"), selectedIndex != 0);
+                EnableState($(".dashBoardContainer select[name='Proximity']"), selectedIndex != 0);
+                EnableState($(".dashBoardContainer #planContainer"), selectedIndex != 0);
+                EnableState($(".dashBoardContainer #specialtiesContainer"), selectedIndex != 0);
+                EnableState($(".dashBoardContainer #checkBoxPCP"), selectedIndex == 1);
+                EnableState($(".dashBoardContainer #specialtySelect"), selectedIndex != 0);
+            };
+ </script>
+ <!-- End _FindAProvider_PlanByState -->
+ <script type="text/javascript">
+  $('#searchResultsHeader').show();
+            $('#searchHeader').hide();
+            $('#nameContainer').show();
+            $('#checkBoxPCP').attr('disabled', null);
+            $(document).ready(
+                function ()
+                {
+                    //                    var script = document.createElement("script");
+                    //                    script.id = "mapapi";
+                    //                    script.type = "text/javascript";
+                    //                    script.src = "https://maps-api-ssl.google.com/maps/api/js?v=2&client=gme-prismdb&sensor=false&callback=LoadMap&channel=bcbsa-app-9.1";
+                    //                    document.body.appendChild(script);
+
+                    $("#fep-link").live("click", function () {
+                        $('input[name="Product"]').attr("value", "SO,BO");
+                        $('input[name="AlphaPrefix"]').attr("value", "Federal Employee");
+                        $("#verifyNetwork").attr("action", 'http://provider.fepblue.org/Search');
+                        /*if ($(".fep-dentist-alert").length <= 0 && $(".fep-bh-alert").length <= 0) {
+                            $("#verifyNetwork").submit();
+                        }
+                        if ($(".fep-dentist-alert").length > 0) {
+                            $(".fep-dentist-alert").show();
+                            $(".see-matches").html("These Doctors are out of your Network");
+                            $("#matches-top").css("background-color", "#fedfdf");
+                        }
+                        if ($(".fep-bh-alert").length > 0) {
+                            $(".fep-bh-alert").show();
+                            $(".see-matches").html("These Doctors are out of your Network");
+                            $("#matches-top").css("background-color", "#fedfdf");
+                        }*/
+                        $("#verifyNetwork").submit();
+                    });
+
+                    $("#verifyNetwork").live("submit", function () {
+                        if ($('input[name="AlphaPrefix"]').val() != '' && $('input[name="AlphaPrefix"]').val() != "Federal Employee") {
+                            var IsValidPrefix = $.ajax({ url: encodeURI(DefaultAction + "ValidateAlphaPrefix?AlphaPrefix=" + $('input[name="AlphaPrefix"]').val()), async: false }).responseText;
+                            if ($('input[name="AlphaPrefix"]').val().match("^[R|r][0-9]")) {
+                                $("#verifyNetwork").attr("action", 'http://provider.fepblue.org/Search');
+                                $('input[name="Product"]').attr("value", "SO,BO");
+                                $('input[name="AlphaPrefix"]').attr("value", "Federal Employee");
+                            }
+                            else
+                            {
+                                if (IsValidPrefix != "True") {
+                                    ShowMessage("<p class=\"formDisclaimer icon-alert\">You have entered an invalid Prefix.  Please try again.</p>", "large");
+                                    return false;
+                                }
+                                else
+                                {
+                                    var link = $.ajax({ url: encodeURI(DefaultAction + "GetRedirectLink?PrefixEntered=" + $('input[name="AlphaPrefix"]').val() + "&State=" + $("input[name=State]").val() + "&Address=" + $("input[name=Address]").val()), async: false }).responseText
+                                    if (link != '') {
+                                        if (link.indexOf("|Rediect") < 0) {
+                                            location.href = link;
+                                            return false;
+                                        }
+                                        else {
+                                            link = link.replace("|Rediect", "");
+                                            $("#verifyNetwork").attr("action", link);
+                                        }
+                                        //$("#verifyNetwork").attr("action", link.replace('?', 'Search?'));
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    $("#fep-link-local").live("click", function () {
+                        $('input[name="Product"]').attr("value", "SO,BO");
+                        $('input[name="AlphaPrefix"]').attr("value", "Federal Employee");
+                        $('select[name="ProductID"]').attr("value", "");
+                        $("#frmLocalPlan").attr("action", 'http://provider.fepblue.org/Search');
+                        /*if ($(".fep-dentist-alert").length <= 0 && $(".fep-bh-alert").length <= 0) {
+                        $("#verifyNetwork").submit();
+                        }
+                        if ($(".fep-dentist-alert").length > 0) {
+                        $(".fep-dentist-alert").show();
+                        $(".see-matches").html("These Doctors are out of your Network");
+                        $("#matches-top").css("background-color", "#fedfdf");
+                        }
+                        if ($(".fep-bh-alert").length > 0) {
+                        $(".fep-bh-alert").show();
+                        $(".see-matches").html("These Doctors are out of your Network");
+                        $("#matches-top").css("background-color", "#fedfdf");
+                        }*/
+                        $("#frmLocalPlan").submit();
+                    });
+
+                    $("#bdc-learn-more-link").live("click", function(){
+                        $("#bdc-explain").toggle();
+                    });
+
+                });
+
+                $(window).bind("load", function () {
+
+                    
+
+                    //setTimeout(DisplayInfoAfterPageLoads, 500);
+
+                    //setTimeout(DisplayRegenceDisclaimers,2000);
+
+                    DisplayInfoAfterPageLoads();
+                    function DisplayInfoAfterPageLoads()
+                    {
+                        DisplayBDCInfoBar();
+                        DisplayRegenceDisclaimers();
+                        GetFilters();
+
+                        var script = document.createElement("script");
+                        script.id = "mapapi";
+                        script.type = "text/javascript";
+                        script.src = "https://maps-api-ssl.google.com/maps/api/js?v=2&client=gme-prismdb&sensor=false&callback=LoadMap&channel=bcbsa-app-9.1";
+                        document.body.appendChild(script);
+                    }
+
+                    function GetFilters()
+                    {
+                        $('.loader-mop').show();
+                        $.ajax({ 
+                            type: 'GET', 
+                            url: encodeURI(ResultsAction + "GetFilters"), 
+                            async: true, 
+                            success: function(response){
+                                $('.loader-mop').hide();
+                                $(".advSearchMod").hide();
+                                $("#advSearch-options").html(response);
+                                $(".advSearchMod").slideToggle("slow","swing");
+
+                                $(".filterOption:checked").each(function () {
+                                    var id = $(this).attr("title");
+                                    var dataid = $(this).attr("data-id");
+                                    var value = $(this).val();
+                                    //alert("Do something for: " + id + ", " + value + ", " + dataid);
+                                    if (id == "PatientRatings") {
+                                        var count = value;
+                                        var imgString = "";
+                                        for (var i = 0; i < count; i++) {
+                                            imgString += "<img src='Images/star-rating-filled.png' />";
+                                        }
+                                        //RemoveCategoryResults('filter_' + id + value.replace(",", "_") + "'");
+                                        $('.advance-search-options.' + id).after('<div class="adv' + id + ' filter_' + id + value.replace(",", "_") + '" id="filter_' + id + value + '">' + imgString + ' ' + dataid + ' Star <span class="icon-close" onclick="RemoveCategoryResults(' + "'" + 'filter_' + id + value.replace(",", "_") + "'" + ', ' + "'" + value.replace(",", "_") + "'" + ')"></span></div>');
+                                    }
+                                    else {
+                                        var subFilterName;
+                                        var subFilterNameValue;
+                                        if (id == 'Affiliations' || id == 'AffiliationBDC')
+                                            subFilterName = 'Affiliation';
+                                        else if (id == 'All Blue Distinction' || id == 'All Blue Distinction Centers' || id == 'All Blue Distinction Centers+') {
+                                            //subFilterName = 'AffiliationBDC';
+                                            id = 'AffiliationBDC';
+                                        }
+                                        else
+                                            subFilterName = id;
+                                        subFilterNameValue = value;
+
+
+                                        if (value == "300000") {
+                                            subFilterName = "BprFlag";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "400000") {
+                                            subFilterName = "BoardCertified";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "500000") {
+                                            subFilterName = "IsBDC";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "600000") {
+                                            subFilterName = "QbrFlag";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "700000") {
+                                            subFilterName = "IsBDCPlus";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "900000") {
+                                            subFilterName = "PCMH";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "12300000") {
+                                            subFilterName = "BDTC";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (value == "12400000") {
+                                            subFilterName = "AllBDC";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (dataid == "Doctor/Group Clinic") {
+                                            subFilterName = "DoctorGroupPerformance";
+                                            subFilterNameValue = true;
+                                        }
+
+                                        if (dataid == "Hospital") {
+                                            subFilterName = "HospitalPerformance";
+                                            subFilterNameValue = true;
+                                        }
+                                        //alert("Do something for: " + id + ", " + value + ", " + dataid);
+                                        //RemoveCategoryResults('filter_' + id + value.replace(",", "_") + "'", "'" + value.replace(",", "_") + "'");
+                                        if (subFilterName == "AllBDC") {
+                                            $('.advance-search-options.' + id).after('<div class="adv' + id + ' filter_' + id + value.replace(",", "_") + '" id="filter_' + id + value + '">' + dataid + ' <span class="icon-close" onclick="RemoveCategoryResults(' + "'" + 'filter_' + id + value.replace(",", "_") + "'" + ', ' + "'" + value.replace(",", "_") + "'" + ')"></span></div>');
+                                        }
+                                        else {
+                                            $('.advance-search-options.' + id).after('<div class="adv' + id + ' filter_' + id + value.replace(",", "_") + '" id="filter_' + id + value + '">' + dataid + ' <span class="icon-close" onclick="RemoveCategoryResults(' + "'" + 'filter_' + id + value.replace(",", "_") + "'" + ', ' + "'" + value.replace(",", "_") + "'" + ')"></span></div>');
+                                        }
+                                    }
+                                });
+                            } 
+                        });
+                    }
+
+                    function DisplayBDCInfoBar()
+                    {
+                        $.ajax({
+                            type: 'GET',
+                            url: encodeURI(ResultsAction + "DisplayBDCInfoBar"),
+                            async: true,
+                            success: function(response){
+                                //alert("prp"+value);
+                                if(response == "both")
+                                {
+                                    $("#bdc-disclaimer").show();
+                                    $(".bdc-general-disclaimer").show();
+                                    //$(".bdtc-general-disclaimer").show();
+                                }
+                                else if(response == "bdc")
+                                {
+                                    $("#bdc-disclaimer").show();
+                                    $(".bdc-general-disclaimer").show();
+                                }
+                                else if(response == "bdtc")
+                                {
+                                    $("#bdc-disclaimer").show();
+                                    $(".bdc-general-disclaimer").show();
+                                }
+                            }
+                        });
+                    }
+
+                    function DisplayRegenceDisclaimers()
+                    {
+                        $.ajax({
+                            type: 'GET',
+                            url: encodeURI(DefaultAction + "DisplayRegenceDisclaimers"),
+                            async: true,
+                            success: function(response){
+                                //alert("prp"+value);
+                                $("#regence-disclaimer").html(response);
+                            }
+                        });
+                    }
+
+                    //              $('.bdc-section').each(function (i, obj) {
+                    //                        add_BDC_section($(this).attr("data-id"));
+                    //                });
+
+                    if($('#Network-holder').length > 0)
+                    {
+                        var networkHolderMessage = $("#networkHolderMessage").val();
+                        $('#Network-holder').html(networkHolderMessage + $("select[name='ProductID'] option:selected").text());
+                    }
+                });
+
+                function LoadMap()
+                {
+                    var mapID = "pnlGoogleMap";
+                    var mapLocations = [[1,37.7748680114746,-122.420890808105,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue1.png","Multiple Providers","45 Franklin St Ste 210","San Francisco, CA 94102","(408) 259-1933",1399763],[2,37.774471282959,-122.422508239746,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue2.png","Multiple Providers","110 Gough St Ste 403B","San Francisco, CA 94102","(415) 995-9650",1868180],[3,37.7770042419434,-122.421943664551,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue3.png","Multiple Providers","333 Hayes St Ste 102","San Francisco, CA 94102","(415) 267-6171",1832002],[4,37.7734794616699,-122.416076660156,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue4.png","Mary H Ciofalo, MFT","169 11th St","San Francisco, CA 94103","(415) 929-8200",1848095],[5,37.7771797180176,-122.423057556152,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue5.png","Multiple Providers","414 Gough St Ste 6","San Francisco, CA 94102","(415) 820-1401",3206893],[6,37.777286529541,-122.423072814941,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue6.png","Multiple Providers","423 Gough St","San Francisco, CA 94102","(415) 646-0421",4048271],[7,37.7786102294922,-122.424423217773,"https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_blue7.png","Jessica L McGowen, MFT","459 Fulton St Ste 105","San Francisco, CA 94102","(415) 529-8891",1844266]];
+                    var startingLatLong = new google.maps.LatLng(37.7760448455811, -122.420249938965);
+                    var distance = 1;
+                    var popupUrl = DefaultAction + 'GetProviderPopup';
+                    var proximity = 50;
+                    var zoomValue = 14;
+                    if(proximity == 500)
+                    {
+                        zoomValue = 7;
+                    }
+                    else if(proximity > 5 && proximity < 50)
+                    {
+                        zoomValue = 10;
+                    }
+                    else if(proximity >= 50 && proximity <= 100)
+                    {
+                        zoomValue = 7;
+                    }
+                    else
+                    {
+                        zoomValue = 14;
+                    }
+                    CreateGoogleMap(mapID, mapLocations, startingLatLong, distance, popupUrl, zoomValue);
+
+                }
+                function add_BDC_section(value)
+                {
+                    $.ajax({
+                        type: 'GET',
+                        url: encodeURI(ResultsAction + "DisplayBDCBDCPlus"),
+                        async: true,
+                        data: 'ID='+value,
+                        success: function(response){
+                            //alert("prp"+value);
+                            $("#bdc"+value).html( response );
+                        }
+                    });
+  
+  
+                }
+ </script>
+ <script defer="" src="/sprqdstlqqxtzsay.js" type="text/javascript">
+ </script>
+ <style type="text/css">
+  #d__fFH{position:absolute;top:-5000px;left:-5000px}#d__fF{font-family:serif;font-size:200px;visibility:hidden}#rwfbtrrvrcywycy{display:none!important}
+ </style>
+</head>
+<body>
+ <div id="browser-update">
+ </div>
+ <!-- Header -->
+ <header>
+  <meta content="Guest" name="WT.z_ConsumerType"/>
+  <div class="container">
+   <div class="row">
+    <div class="col7">
+     <a class="topLogoWrap" href="#">
+      <img alt="logo" id="topLogo" src="/Images/header-bcbsa-logo-lo.png">
+      </img>
+     </a>
+     <h2 class="subLogo">
+      <a href="/consumer?ReviseSearch=True" style="text-decoration: none;">
+       National Doctor and Hospital Finder
+      </a>
+     </h2>
+    </div>
+    <div class="col5 pull-right offsetTop2">
+     <ul class="pull-right" id="headerOpts">
+      <!--li> <a href="#" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage', 'SpanishToggled')">En Español</a> </li-->
+      <li>
+       <a href="#" id="lnkSpanish" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage', 'SpanishToggled')">
+        Español
+       </a>
+      </li>
+      <!--oobegin -->
+      <script charset="windows-1252" language="javascript" src="/onlineopinionS3tS/oo_engine.js" type="text/javascript">
+      </script>
+      <li class="text">
+       Text Size
+      </li>
+      <li class="font-sizer">
+       <a class="font-sizer small" href="#" id="font-minimum" onclick="dcsMultiTrack('WT.z_SiteFont','Small');" title="Toggle Smaller Fonts">
+        a
+       </a>
+       <a class="font-sizer normal" href="#" id="font-standard" onclick="dcsMultiTrack('WT.z_SiteFont','Medium');" title="Toggle Normal Fonts">
+        a
+       </a>
+       <a class="font-sizer large" href="#" id="font-maximum" onclick="dcsMultiTrack('WT.z_SiteFont','Large');" title="Toggle Large Fonts">
+        a
+       </a>
+      </li>
+     </ul>
+    </div>
+    <!-- End Page Options -->
+   </div>
+  </div>
+ </header>
+ <!-- Page Wrapper, needed for font resizing -->
+ <div class="wrap">
+  <style type="text/css">
+   u {    
+        /*border-bottom: 1px dotted #000;*/
+        text-decoration: none;
+    }
+    .tip-top strong, .tip-top:active, .tip-top:link, .tip-top:visited, .tip-top:hover {
+        text-decoration: none !important;
+        color: #616161 !important;
+        font-weight:normal !important;
+        cursor:default;
+    }
+  </style>
+  <div class="container">
+   <meta content="Results Found" name="WT.z_NullSearchReturned"/>
+   <meta content="Results" name="WT.z_GMapCall">
+    <meta content="lpc" name="WT.oss"/>
+    <meta content="50" name="WT.z_SearchRadius"/>
+    <meta content="San Francisco" name="WT.z_SearchCity"/>
+    <meta content="CA" name="WT.z_SearchState"/>
+    <meta content="lpc;BlueCard PPO/EPO;San Francisco" name="WT.z_AllSearchCriteria"/>
+    <meta content="Guest" name="WT.z_prefix"/>
+    <meta content="BlueCard PPO/EPO" name="WT.z_PlanOrNetwork"/>
+    <div class="row">
+     <div class="col8 offsetTop3">
+      <div class="row">
+       <div class="module group shadow" id="main-content">
+        <a class="start-over pull-right gen-button" href="/consumer?ReviseSearch=True" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Search Again');">
+         Search Again
+        </a>
+        <h1>
+         200 Matches for lpc
+        </h1>
+        <div style="clear:left;margin-top:-15px;">
+         <p>
+          Within 50  miles  of San Francisco
+         </p>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </meta>
+  </div>
+ </div>
+</body>
+<br/>
+<div class="advSearchMod" style="display: block;min-height:100px;">
+ <div class="loader-mop" style="display:none;left:-30px;">
+  <img alt="Loader Image" class="loader-img" src="/Images/ajax-loader-bcbsa.gif"/>
+ </div>
+ <div class="advSearch" id="advSearch-options">
+  <form action="/SearchResults" id="frmFilter" method="post">
+   <input name="__RequestVerificationToken" type="hidden" value="C1B8/xYuZqFY1FUtWArHavLODi69pZ+qJF4+LD+p7eOJUByLR1N+UajrfYD5DguvpKGdeNLb3YI/nTfU+tjZWWvPPXEo74eIja9j5hEvlfom8d/O5MpLg1V5JfgWJBPFfwuqzW4WGVFFWZP70vzv4ZTgGkg2nk0GLUmR/9nMkRE="/>
+   <input name="RefineResultsPost" title="" type="hidden" value="true"/>
+   <ul class="droplist" id="advance-search-list">
+   </ul>
+  </form>
+ </div>
+</div>
+<div id="regence-disclaimer">
+</div>
+<div class="row" id="bdc-disclaimer" style="display:none">
+ <div class="row" id="uc-content">
+  <span class="icon-warning-sign">
+  </span>
+  <p>
+   Looking for the right specialty care for you and your family?
+   <a href="#" id="bdc-learn-more-link">
+    Learn more
+   </a>
+   about Blue Distinction Centers.
+   <br/>
+  </p>
+  <div id="bdc-explain" style="display: none;color: #666666;">
+   Blue Distinction Centers+ are healthcare facilities recognized for their expertise and efficiency in delivering specialty care  and Blue Distinction Centers are healthcare facilities recognized for their expertise in delivering specialty care.  Click
+   <a href="http://www.bcbs.com/why-bcbs/blue-distinction/">
+    here
+   </a>
+   for more information.
+  </div>
+ </div>
+ <!-- /module urgentcare -->
+</div>
+<div class="row">
+ <div class="module group shadow-lt" id="sub-content">
+  <div id="matches-top">
+   <img alt="BCBSA ID Card" src="/Images/bcbsa_idcard.png" style="float:right;" width="150"/>
+   <h3 class="see-matches">
+    These matches are in the BlueCard PPO/EPO  network(s)
+   </h3>
+   <p>
+    To see doctors &amp; hospitals in your network, enter your member ID.
+    <a href="#" id="fep-link">
+     Federal employee
+    </a>
+    ?
+   </p>
+   <div class="inputContainer round">
+    <form action="/Search" id="verifyNetwork" method="post">
+     <input name="__RequestVerificationToken" type="hidden" value="fcWKTcBy8oJDiD7FjC8M2uaddnjoP9+gk88OCnsl7SFD3ybE0Exr7zVXa4XZ04S4ptMlQb+JcFzm5cbK7yBNxV9un52Q8QwWwf/bDRZQGMnVymYS+3HFlPUQEFZun7rGyA2EMQR2Rbs4Bus9C75eG6eTcyGxUja7/6tTYvuBhy4="/>
+     <input class="city" name="City" title="City" type="hidden" value="San Francisco"/>
+     <input class="county" name="County" title="County" type="hidden" value="San Francisco County"/>
+     <input class="state" name="State" title="State" type="hidden" value="CA"/>
+     <input class="zip" name="Zip" title="Zip" type="hidden" value=""/>
+     <input name="Address" title="Address" type="hidden" value="San Francisco"/>
+     <input name="Proximity" title="Proximity" type="hidden" value="50"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="567"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="472"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="325"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="182"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="183"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="471"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="181"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="324"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="330"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="341"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="330"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="567"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="472"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="325"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="182"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="183"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="471"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="341"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="324"/>
+     <input name="Specialty" title="Specialty" type="hidden" value="181"/>
+     <input name="Keyword" title="Keyword" type="hidden" value="lpc"/>
+     <input name="FilterLogic" title="Filter" type="hidden" value="330"/>
+     <input name="TermType" title="Term Type" type="hidden" value="Specialty"/>
+     <input name="SpecCode" title="Spec Code" type="hidden" value="BJ"/>
+     <input name="Product" title="Product" type="hidden" value=""/>
+     <label for="">
+     </label>
+     <input class="insurCard" maxlength="3" name="AlphaPrefix" placeholder="Enter the first 3 letters from your member ID" title="AlphaPrefix" type="text" value="">
+      <input class="icon-submit" id="submitForm" title="" type="submit" value="Submit">
+      </input>
+     </input>
+    </form>
+   </div>
+  </div>
+  <!-- /End Matches Top -->
+  <div id="results-meta">
+   <div class="metaContainer">
+    <form action="/SearchResults" id="frmProviderType" method="post">
+     <input name="__RequestVerificationToken" type="hidden" value="+v5MzmQ5Z5Fr1NFycBNrF5FuyH8+zf8GLoO9oyHA+IrUEggOsm64WLX78/cyL4K7M80FXAWax+UMOhCOCyxocI7QMAaSFyIELlzsWa4nOYbU+RV8oHRdcXCnvJaVLX9rpl4PHs8MloF4+hB2mjs2NVLwSzIxauNDKZtOS5Rnqng="/>
+     <label for="">
+      Show:
+     </label>
+     <select id="show-select-sort-fiter" name="ProviderTypeList" onchange="dcsMultiTrack('WT.z_SearchFeatureUsage','Show All ' + $(this).val());$('#frmProviderType').submit();" title="">
+      <option value="0">
+       All
+      </option>
+      <option value="01">
+       Behavioral Health
+      </option>
+      <option value="03">
+       Doctor and Other Healthcare Professionals
+      </option>
+     </select>
+    </form>
+   </div>
+   <div class="metaContainer">
+    <form action="/SearchResults" id="frmSort" method="post">
+     <input name="__RequestVerificationToken" type="hidden" value="KHhccnwM7xCuEfCllw5Bg7M6/zCZQmtcFHgldn/WxqAWMTlQ/kchB3PvyZi5GIXLYDekHqkgVG34inj+h9PYe+JOCHDEKlXz1Y/MRCen4QxYNVHKFKzkmSLbjYZOMKRttbNZ1kTrwqFc27+oZZ6CHEQs2icbtgBuGslK8GF/slU="/>
+     <label for="">
+      Sort by:
+     </label>
+     <select id="sort-by-select" name="SortBy" onchange="dcsMultiTrack('WT.z_SearchFeatureUsage', 'Sort by ' + $(this).val());$('#frmSort').submit();" title="">
+      <option selected="selected" value="Distance">
+       Distance
+      </option>
+      <option value="First Name">
+       First Name
+      </option>
+      <option value="Last Name">
+       Last Name
+      </option>
+     </select>
+    </form>
+   </div>
+  </div>
+  <!-- /End Results Meta -->
+  <div id="results-list-container">
+   <!-- begin results -->
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1399763/name/Campbell-Rhonda-J">
+       Campbell Rhonda J
+      </a>
+     </h3>
+     <a href="/provider/id/1399763/name/Campbell-Rhonda-J">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xD43759A9ED44373C624FCD7312667552D94020D8" href="#" id="0xD43759A9ED44373C624FCD7312667552D94020D8" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Campbell Rhonda J
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       Ste 210
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (408) 259-1933
+       </strong>
+       <br/>
+       <a href="/provider/id/1399763/name/CampbellRhondaJ?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1399763/name/Campbell-Rhonda-J">
+         Campbell Rhonda J
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        Ste 210
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (408) 259-1933
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1399763">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/2934541/name/Jayn-Org">
+       Jayn Org
+      </a>
+     </h3>
+     <a href="/provider/id/2934541/name/Jayn-Org">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xFC302FC224A182C0A448FF5F71DA73D000E88BEA" href="#" id="0xFC302FC224A182C0A448FF5F71DA73D000E88BEA" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Jayn Org
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (510) 516-3188
+       </strong>
+       <br/>
+       <a href="/provider/id/2934541/name/JaynOrg?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/2934541/name/Jayn-Org">
+         Jayn Org
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (510) 516-3188
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="2934541">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1922812/name/Jeannette-Eisen-MFT">
+       Jeannette Eisen, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1922812/name/Jeannette-Eisen-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xD50454242C80CABAB39B9AD30366436375F779EF" href="#" id="0xD50454242C80CABAB39B9AD30366436375F779EF" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1223939" id="prp1223939">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Jeannette  Eisen Mft
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       Ste 217
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 730-4696
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1922812/name/Jeannette-Eisen-MFT">
+         Jeannette Eisen, MFT
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        Ste 217
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 730-4696
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1922812">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1930194/name/Pamela-A-Grant-MFT">
+       Pamela A Grant, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1930194/name/Pamela-A-Grant-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xFCFED6C1A78E619A88A683202C32E6532881CE1B" href="#" id="0xFCFED6C1A78E619A88A683202C32E6532881CE1B" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1231084" id="prp1231084">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Pamela A Grant Mft
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       Ste 204
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 517-3525
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1930194/name/Pamela-A-Grant-MFT">
+         Pamela A Grant, MFT
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        Ste 204
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 517-3525
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1930194">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1756230/name/Rhonda-J-Campbell-MFT">
+       Rhonda J Campbell, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1756230/name/Rhonda-J-Campbell-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xA52DAC74AFB523437051F71B7E127CC25D68D3AB" href="#" id="0xA52DAC74AFB523437051F71B7E127CC25D68D3AB" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1063076" id="prp1063076">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Rhonda J Campbell Mft
+        <br/>
+        Campbell Rhonda J
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       Ste 210
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (408) 259-1933
+       </strong>
+       <br/>
+       <a href="/provider/id/1756230/name/RhondaJCampbellMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+       Affiliations:
+       <span>
+        Campbell Rhonda J
+       </span>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1756230/name/Rhonda-J-Campbell-MFT">
+         Rhonda J Campbell, MFT
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        Ste 210
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (408) 259-1933
+        <br/>
+        Hospital Affiliation
+        <a href="/provider/id/1756230/name/Rhonda-J-Campbell-MFT">
+         Campbell Rhonda J
+        </a>
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1756230">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1840995/name/Thomas-G-Paterson-MFT">
+       Thomas G Paterson, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1840995/name/Thomas-G-Paterson-MFT">
+      <img alt="Profile Pic Male" class="result-pic" height="100" src="/Images/profile-male.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xFB6EB772C347374D59BB72208BE2B2E66C7B4D4B" href="#" id="0xFB6EB772C347374D59BB72208BE2B2E66C7B4D4B" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1144985" id="prp1144985">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Thomas G Paterson Mft
+       </strong>
+       <br/>
+       45 Franklin St
+       <br/>
+       Ste 311
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 333-1901
+       </strong>
+       <br/>
+       <a href="/provider/id/1840995/name/ThomasGPatersonMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1840995/name/Thomas-G-Paterson-MFT">
+         Thomas G Paterson, MFT
+        </a>
+       </h2>
+       <p>
+        45 Franklin St
+        <br/>
+        Ste 311
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 333-1901
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1840995">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1868180/name/Andrew-Pelfini-MFT">
+       Andrew Pelfini, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1868180/name/Andrew-Pelfini-MFT">
+      <img alt="Profile Pic Male" class="result-pic" height="100" src="/Images/profile-male.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xBAC264519EFFA840400D47142764BB24641CB692" href="#" id="0xBAC264519EFFA840400D47142764BB24641CB692" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1171310" id="prp1171310">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Andrew  Pelfini Mft
+       </strong>
+       <br/>
+       110 Gough St
+       <br/>
+       Ste 403B
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 995-9650
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1868180/name/Andrew-Pelfini-MFT">
+         Andrew Pelfini, MFT
+        </a>
+       </h2>
+       <p>
+        110 Gough St
+        <br/>
+        Ste 403B
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 995-9650
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1868180">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1789162/name/Michael-K-Nold-MFT">
+       Michael K Nold, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1789162/name/Michael-K-Nold-MFT">
+      <img alt="Profile Pic Male" class="result-pic" height="100" src="/Images/profile-male.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x4AAD6B5C85DF06E51D2F4BAADED53F0406C72694" href="#" id="0x4AAD6B5C85DF06E51D2F4BAADED53F0406C72694" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1094847" id="prp1094847">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Michael K Nold Mft
+       </strong>
+       <br/>
+       110 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 820-9662
+       </strong>
+       <br/>
+       <a href="/provider/id/1789162/name/MichaelKNoldMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1789162/name/Michael-K-Nold-MFT">
+         Michael K Nold, MFT
+        </a>
+       </h2>
+       <p>
+        110 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 820-9662
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1789162">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1832002/name/Michiko-Tamate-MFT">
+       Michiko Tamate, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1832002/name/Michiko-Tamate-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xAD932D1D1D09293B41A3CA82E605E31C23EBBB53" href="#" id="0xAD932D1D1D09293B41A3CA82E605E31C23EBBB53" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1136280" id="prp1136280">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Michiko  Tamate Mft
+        <br/>
+        Tamate Michiko
+       </strong>
+       <br/>
+       333 Hayes St
+       <br/>
+       Ste 102,Ste 210
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 267-6171
+       </strong>
+       <br/>
+       <a href="/provider/id/1832002/name/MichikoTamateMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+       Affiliations:
+       <span>
+        Tamate Michiko
+       </span>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1832002/name/Michiko-Tamate-MFT">
+         Michiko Tamate, MFT
+        </a>
+       </h2>
+       <p>
+        333 Hayes St
+        <br/>
+        Ste 102,Ste 210
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 267-6171
+        <br/>
+        Hospital Affiliation
+        <a href="/provider/id/1832002/name/Michiko-Tamate-MFT">
+         Tamate Michiko
+        </a>
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1832002">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/2591344/name/Tamate-Michiko">
+       Tamate Michiko
+      </a>
+     </h3>
+     <a href="/provider/id/2591344/name/Tamate-Michiko">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x10A42660D25A101A82BB53BDDDAA3A2C69C3217D" href="#" id="0x10A42660D25A101A82BB53BDDDAA3A2C69C3217D" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Tamate Michiko
+       </strong>
+       <br/>
+       333 Hayes St
+       <br/>
+       Ste 210
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 267-6171
+       </strong>
+       <br/>
+       <a href="/provider/id/2591344/name/TamateMichiko?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/2591344/name/Tamate-Michiko">
+         Tamate Michiko
+        </a>
+       </h2>
+       <p>
+        333 Hayes St
+        <br/>
+        Ste 210
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 267-6171
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="2591344">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1848095/name/Mary-H-Ciofalo-MFT">
+       Mary H Ciofalo, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1848095/name/Mary-H-Ciofalo-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xCB4010B28E1ECE9E62336516F2574D47EA80B9AC" href="#" id="0xCB4010B28E1ECE9E62336516F2574D47EA80B9AC" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1151871" id="prp1151871">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Mary H Ciofalo Mft
+       </strong>
+       <br/>
+       169 11th St
+       <br/>
+       San Francisco, CA 94103
+       <br/>
+       Ph:
+       <strong>
+        (415) 929-8200
+       </strong>
+       <br/>
+       <a href="/provider/id/1848095/name/MaryHCiofaloMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1848095/name/Mary-H-Ciofalo-MFT">
+         Mary H Ciofalo, MFT
+        </a>
+       </h2>
+       <p>
+        169 11th St
+        <br/>
+        San Francisco, CA 94103
+        <br/>
+        PH: (415) 929-8200
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1848095">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/3206893/name/Boas-Lucy-A">
+       Boas Lucy A
+      </a>
+     </h3>
+     <a href="/provider/id/3206893/name/Boas-Lucy-A">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x79C22D5361C044C5947948D70E50502355F17AB2" href="#" id="0x79C22D5361C044C5947948D70E50502355F17AB2" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Boas Lucy A
+       </strong>
+       <br/>
+       414 Gough St
+       <br/>
+       Ste 6
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 820-1401
+       </strong>
+       <br/>
+       <a href="/provider/id/3206893/name/BoasLucyA?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/3206893/name/Boas-Lucy-A">
+         Boas Lucy A
+        </a>
+       </h2>
+       <p>
+        414 Gough St
+        <br/>
+        Ste 6
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 820-1401
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="3206893">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1847129/name/Lucy-A-Boas-MFT">
+       Lucy A Boas, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1847129/name/Lucy-A-Boas-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x9F1C78B1058384C299157F3903C5EAF6B72ABDFC" href="#" id="0x9F1C78B1058384C299157F3903C5EAF6B72ABDFC" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1150928" id="prp1150928">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Lucy A Boas Mft
+        <br/>
+        Boas Lucy A
+       </strong>
+       <br/>
+       414 Gough St
+       <br/>
+       Ste 6
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 820-1401
+       </strong>
+       <br/>
+       Affiliations:
+       <span>
+        Boas Lucy A
+       </span>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1847129/name/Lucy-A-Boas-MFT">
+         Lucy A Boas, MFT
+        </a>
+       </h2>
+       <p>
+        414 Gough St
+        <br/>
+        Ste 6
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 820-1401
+        <br/>
+        Hospital Affiliation
+        <a href="/provider/id/1847129/name/Lucy-A-Boas-MFT">
+         Boas Lucy A
+        </a>
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1847129">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1850725/name/Phern-Hunt-MFT">
+       Phern Hunt, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1850725/name/Phern-Hunt-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x672558103CB67833372CCFBBB65D1C22CCF97751" href="#" id="0x672558103CB67833372CCFBBB65D1C22CCF97751" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1154401" id="prp1154401">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Phern  Hunt Mft
+       </strong>
+       <br/>
+       414 Gough St
+       <br/>
+       Ste 4
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 285-2251
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1850725/name/Phern-Hunt-MFT">
+         Phern Hunt, MFT
+        </a>
+       </h2>
+       <p>
+        414 Gough St
+        <br/>
+        Ste 4
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 285-2251
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1850725">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/4048271/name/Alex-M-Silberstein-MFT">
+       Alex M Silberstein, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/4048271/name/Alex-M-Silberstein-MFT">
+      <img alt="Profile Pic Male" class="result-pic" height="100" src="/Images/profile-male.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x8E3B91CAF3C086776613BE1D4F1E1A532D22A341" href="#" id="0x8E3B91CAF3C086776613BE1D4F1E1A532D22A341" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="2458508" id="prp2458508">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Silberstein Alex
+       </strong>
+       <br/>
+       423 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 646-0421
+       </strong>
+       <br/>
+       Affiliations:
+       <span>
+        Silberstein Alex
+       </span>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/4048271/name/Alex-M-Silberstein-MFT">
+         Alex M Silberstein, MFT
+        </a>
+       </h2>
+       <p>
+        423 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 646-0421
+        <br/>
+        Hospital Affiliation
+        <a href="/provider/id/4048271/name/Alex-M-Silberstein-MFT">
+         Silberstein Alex
+        </a>
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="4048271">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/4050548/name/Gayle-L-Paul-MFT">
+       Gayle L Paul, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/4050548/name/Gayle-L-Paul-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x4294781836F8F22FDACDCC1501D70FEF2AEE6B9A" href="#" id="0x4294781836F8F22FDACDCC1501D70FEF2AEE6B9A" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="2460110" id="prp2460110">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        The Happiness Institute
+        <br/>
+        Gayle L Paul Mft
+       </strong>
+       <br/>
+       423 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 586-5588
+        <br/>
+        (415) 412-9674
+       </strong>
+       <br/>
+       Affiliations:
+       <span>
+        The Happiness Institute
+       </span>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/4050548/name/Gayle-L-Paul-MFT">
+         Gayle L Paul, MFT
+        </a>
+       </h2>
+       <p>
+        423 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 586-5588
+        <br/>
+        (415) 412-9674
+        <br/>
+        Hospital Affiliation
+        <a href="/provider/id/4050548/name/Gayle-L-Paul-MFT">
+         The Happiness Institute
+        </a>
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="4050548">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1942262/name/Peter-J-Goetz-MFT">
+       Peter J Goetz, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1942262/name/Peter-J-Goetz-MFT">
+     </a>
+     <a class="save-button myFavorite add" data-id="0xD8E1C73584B02E7B1ADE0832DED170D5A48CB703" href="#" id="0xD8E1C73584B02E7B1ADE0832DED170D5A48CB703" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1242933" id="prp1242933">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Peter J Goetz Mft
+       </strong>
+       <br/>
+       423 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 861-3816
+       </strong>
+       <br/>
+       <a href="/provider/id/1942262/name/PeterJGoetzMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1942262/name/Peter-J-Goetz-MFT">
+         Peter J Goetz, MFT
+        </a>
+       </h2>
+       <p>
+        423 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 861-3816
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1942262">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/3342082/name/Silberstein-Alex">
+       Silberstein Alex
+      </a>
+     </h3>
+     <a href="/provider/id/3342082/name/Silberstein-Alex">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x625E1BEA6A13A2FE3C6E82B58673E2C724DFF718" href="#" id="0x625E1BEA6A13A2FE3C6E82B58673E2C724DFF718" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Silberstein Alex
+       </strong>
+       <br/>
+       423 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 646-0421
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/3342082/name/Silberstein-Alex">
+         Silberstein Alex
+        </a>
+       </h2>
+       <p>
+        423 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 646-0421
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="3342082">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/3229912/name/The-Happiness-Institute">
+       The Happiness Institute
+      </a>
+     </h3>
+     <a href="/provider/id/3229912/name/The-Happiness-Institute">
+      <img alt="Hospital Avatar" class="result-pic" height="100" src="/Images/hospital-avatar.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0x3DAE03CE2E586A9DF504EEE202BBE4C5ACBA0356" href="#" id="0x3DAE03CE2E586A9DF504EEE202BBE4C5ACBA0356" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="services-list">
+      <span class="icon-services">
+       <img alt="Services" src="/Images/icon-specialty-sm.png">
+       </img>
+      </span>
+      <ul>
+       <li>
+        Licensed Marriage/Family Therapist
+       </li>
+      </ul>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        The Happiness Institute
+       </strong>
+       <br/>
+       423 Gough St
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 586-5588
+       </strong>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 ">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/3229912/name/The-Happiness-Institute">
+         The Happiness Institute
+        </a>
+       </h2>
+       <p>
+        423 Gough St
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 586-5588
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="3229912">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <hr/>
+   <div class="col8 result group">
+    <div class="leftCol">
+     <h3 class="result-name">
+      <a href="/provider/id/1844266/name/Jessica-L-McGowen-MFT">
+       Jessica L McGowen, MFT
+      </a>
+     </h3>
+     <p>
+      Licensed Marriage/Family Therapist
+     </p>
+     <a href="/provider/id/1844266/name/Jessica-L-McGowen-MFT">
+      <img alt="Profile Pic Female" class="result-pic" height="100" src="/Images/profile-female.png" width="80"/>
+      <br/>
+     </a>
+     <a class="save-button myFavorite add" data-id="0xD977023ADE95DAACE86B595F4C110C5F72C0B78E" href="#" id="0xD977023ADE95DAACE86B595F4C110C5F72C0B78E" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Save and Compare');">
+      Save and Compare
+     </a>
+    </div>
+    <div class="rightCol">
+     <div class="doctor-overall-rating " data-id="1148163" id="prp1148163">
+      <span class="icon-overall-rating">
+       <img alt="Rating" src="/Images/icon-rating-sm.png">
+       </img>
+      </span>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <img alt="Overall Star Rating" src="/Images/star-rating.png"/>
+      <p>
+       <em>
+        0.0
+       </em>
+       (0 Ratings)
+      </p>
+     </div>
+     <div class="main-address">
+      <span class="icon-address">
+       <img alt="Address" src="/Images/icon-address-sm.png">
+       </img>
+      </span>
+      <p>
+       <strong>
+        Jessica L Mcgowen Mft
+       </strong>
+       <br/>
+       459 Fulton St
+       <br/>
+       Ste 105
+       <br/>
+       San Francisco, CA 94102
+       <br/>
+       Ph:
+       <strong>
+        (415) 529-8891
+       </strong>
+       <br/>
+       <a href="/provider/id/1844266/name/JessicaLMcGowenMFT?Section=locations">
+        Additional Locations
+       </a>
+       <br/>
+      </p>
+     </div>
+     <div class="bdc-section">
+     </div>
+    </div>
+   </div>
+   <div class="row" style="display:none;">
+    <div class="resultWrap col7 odd">
+     <div class="resultInfo">
+      <div class="resultContact">
+       <h2>
+        <a href="/provider/id/1844266/name/Jessica-L-McGowen-MFT">
+         Jessica L McGowen, MFT
+        </a>
+       </h2>
+       <p>
+        459 Fulton St
+        <br/>
+        Ste 105
+        <br/>
+        San Francisco, CA 94102
+        <br/>
+        PH: (415) 529-8891
+       </p>
+      </div>
+     </div>
+     <div id="specialtiesContainerResults">
+     </div>
+     <div class="resultCost">
+     </div>
+     <div class="row resultFeatures">
+      <div class="col7 featuresBoxBorder">
+       <div class="featuresBox boardCert">
+        <a href="#" rel="tooltip" title="Board Certified text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Board Certified
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Accepting New Patients text goes to here...">
+         Accepting New Patients
+        </a>
+       </div>
+       <div class="featuresBox">
+        <a href="#" rel="tooltip" title="Wheelchair Accessible text goes to here...">
+         <span class="orange">
+          Not
+         </span>
+         Wheelchair Accessible
+        </a>
+       </div>
+       <div class="featuresBox compareBox">
+        <a class="btn btn-compare myFavorite compare add" data-compareid="1844266">
+         COMPARE
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <!-- end results -->
+  </div>
+  <!-- /End Results list -->
+  <div class="pagination pull-right">
+   <ul>
+    <li>
+    </li>
+    <li>
+     <span class="selected">
+      1
+     </span>
+    </li>
+    <li>
+     <a href="/ReturnToResults?PageRequested=2" title="Go to page 2">
+      2
+     </a>
+    </li>
+    <li>
+     <a href="/ReturnToResults?PageRequested=3" title="Go to page 3">
+      3
+     </a>
+    </li>
+    <li>
+     <a href="/ReturnToResults?PageRequested=4" title="Go to page 4">
+      4
+     </a>
+    </li>
+    <li>
+     <a href="/ReturnToResults?PageRequested=5" title="Load next set of results">
+      ...
+     </a>
+     <a href="/ReturnToResults?PageRequested=10" title="Load last set of results">
+      10
+     </a>
+    </li>
+   </ul>
+   <a class="lnkDirectory btn btn-directory" data-toggle="modal" href="#" id="directoryCall" onclick="dcsMultiTrack('WT.z_SearchFeatureUsage','Create PDF');">
+    CREATE DIRECTORY
+   </a>
+  </div>
+ </div>
+ <!-- /module sub-content -->
+</div>
+<!-- /col8 -->
+<div class="col4">
+ <div id="saved-box">
+  <div class="module group menu" id="saved-list-container">
+  </div>
+  <!-- /End Saved List Menu Module -->
+ </div>
+ <div class="module group map-module">
+  <span class="top-header">
+   <h3>
+    Nearby:
+   </h3>
+  </span>
+  <div id="pnlGoogleMap" style="width: 258px; height: 460px;">
+  </div>
+ </div>
+ <!-- /End Map Module -->
+</div>
+<!-- /col4 -->
+<div class="module group shadow-lt" id="previously-viewed">
+ <span class="top-header">
+  <h3>
+   Recently Viewed
+  </h3>
+  <div class="header-nav">
+   <a class="more moreLess" href="#">
+    See All
+   </a>
+   |
+   <a class="clearPreviouslyViewed" href="#">
+    Clear All
+   </a>
+  </div>
+ </span>
+ <div class="previous-viewed-item-list previously-viewed limited-view">
+ </div>
+ <div class="previous-viewed-item-list previously-viewed full-view" style="display:none;">
+ </div>
+</div>
+<div class="bdc-general-disclaimer" style="display: none;">
+ <p class="disclaimer-content">
+  Blue Distinction Centers (BDC) met overall quality measures for patient safety and outcomes, developed with input from the medical community. A Local Blue Plan may require additional criteria for facilities located in its own service area; for details, contact your Local Blue Plan. Blue Distinction Centers+ (BDC+) also met cost measures that address consumers' need for affordable healthcare. Each facility's cost of care is evaluated using data from its Local Blue Plan. Facilities in CA, ID, NY, PA, and WA may lie in two Local Blue Plans' areas, resulting in two evaluations for cost of care; and their own Local Blue Plans decide whether one or both cost of care evaluation(s) must meet BDC+ national criteria. Blue Distinction Total Care (BDTC) providers met BDTC national criteria. National criteria for BDC, BDC+, and BDTC are displayed on
+  <a href="http://www.bcbs.com/why-bcbs/blue-distinction/">
+   www.bcbs.com
+  </a>
+  . Individual outcomes may vary. For details on a provider's in-network status or your own policy's coverage, contact your Local Blue Plan and ask your provider before making an appointment. Neither Blue Cross and Blue Shield Association nor any Blue Plans are responsible for non-covered charges or other losses or damages resulting from Blue Distinction or other provider finder information or care received from Blue Distinction or other providers.
+ </p>
+</div>
+<p class="disclaimer-content">
+ Blue Cross and Blue Shield Licensees have made reasonable efforts to ensure that the list of providers displayed is up to date and accurate. Please call the provider before making an appointment to verify that the provider continues to be part of the network. Members should refer to their benefit contract or contact their Plan's Customer Service department to determine if the provider type is covered. Members should also ask Customer Service if the treatment requested from a network provider is covered. Neither the Blue Cross and Blue Shield Association nor any of its Licensees shall be liable for any losses, damages, or uncovered charges as a result of using this provider locator Web site or receiving care from a provider listed in this Web site.
+</p>
+<!-- /End Container -->
+<div class="loader" style="display:none;">
+ <img alt="Loader Image" class="loader-img" src="/Images/ajax-loader-bcbsa.gif"/>
+</div>
+<div class="row" style="display:none">
+ <div class="col3">
+  <div class="module blue group" id="searchFilter">
+   <div>
+    <h1>
+     Customize Results
+    </h1>
+    <form action="/SearchResults" id="frmFilter" method="post">
+     <input name="__RequestVerificationToken" type="hidden" value="3jAIAqA8YFBHS5HIxKqfjcQ/SpgoVUfnOFDUYJmIBBZVMPkpl+d9TiykeNoQQxSLOBNb4pUGqLNQZ7MFFNpAPFloKDx0OZ05limq8zrO/ifmSF4eG7Q1yTGu2awEncyBoB0Gfi6e+l7G7n0A7FGEwN1K10Hu5rxWSyYjg42SjPM="/>
+     <input name="RefineResultsPost" title="" type="hidden" value="true"/>
+     <ul class="droplist">
+     </ul>
+    </form>
+    <a class="removeFilter offset1" href="/ResetFilters" title="Remove Filters">
+     Remove All Filters
+    </a>
+   </div>
+  </div>
+ </div>
+ <!-- End col3 -->
+</div>
+<!-- End Page-Wrapper-->
+<footer>
+ <div class="container offsetTop5">
+  <div class="row">
+   <div class="col6">
+    <ul class="footer-nav">
+     <li>
+      <a class="cs-menu-open" href="javascript:void(0);">
+       Customer Support
+      </a>
+      <div class="cs-menu" style="display:none;">
+       <span class="cs-bottom">
+       </span>
+       <h3>
+        Customer Support
+       </h3>
+       <a class="close-cs-menu pull-right">
+        Close
+        <span class="icon-close">
+        </span>
+       </a>
+       <ul>
+        <li>
+         <a class="open-report-issues" href="/Landing/ReportIssues">
+          Report Issues
+         </a>
+        </li>
+        <!--li><a href="http://provider.bcbs.com/pdf/FAQ.pdf">FAQs</a></li>
+                                    <li><a href="http://provider.bcbs.com/pdf/BC_Help_and_Navigation.pdf">Help</a></li-->
+       </ul>
+      </div>
+     </li>
+     <li>
+      <a href="/Landing/SearchInfo">
+       About This Directory
+      </a>
+     </li>
+     <li>
+      <a href="/consumer/broker">
+       For Brokers and Employers
+      </a>
+     </li>
+    </ul>
+   </div>
+   <div class="col6">
+    <ul class="socialMedia">
+     <li>
+      <a class="icon-facebook" href="https://www.facebook.com/BCBSAssociation">
+      </a>
+      Facebook
+     </li>
+     <li>
+      <a class="icon-twitter" href="https://twitter.com/BCBSAssociation">
+      </a>
+      Twitter
+     </li>
+     <li>
+      <a class="icon-youtube" href="http://www.youtube.com/bluecrossblueshield">
+      </a>
+      YouTube
+     </li>
+     <li>
+      <a class="icon-app" href="http://www.bcbs.com/mobile/">
+      </a>
+      Get the App
+     </li>
+    </ul>
+   </div>
+  </div>
+  <div class="row">
+   <div class="col6">
+    <p>
+     ©2015 Blue Cross and Blue Shield Association, an association of independent Blue Cross and Blue Shield companies. All rights reserved.
+    </p>
+   </div>
+   <div class="col6" style="margin-left: 0px;">
+    <p style="text-align:right;">
+     Date last updated 11/26/2015
+    </p>
+   </div>
+  </div>
+ </div>
+</footer>
+<script type="text/javascript">
+ $(document).ready(function ()
+        {
+            if (false)
+            {
+                window.print();
+        }
+        });
+</script>
+<div class="modal hide fade in" id="modalContainer">
+ <div class="modal-header" id="modalHeader">
+  <a class="close" data-dismiss="modal">
+   x
+  </a>
+  <h3 id="modalTitle">
+  </h3>
+ </div>
+ <div class="modal-body" id="modalBody">
+  <!-- content goes here -->
+ </div>
+</div>
+<!-- modal -->
+<!-- START OF SmartSource Data Collector TAG -->
+<!-- Copyright (c) 1996-2012 Webtrends Inc.  All rights reserved. -->
+<!-- Version: 9.4.0 -->
+<!-- Tag Builder Version: 4.1  -->
+<!-- Created: 8/10/2012 12:26:27 AM -->
+<!-- ----------------------------------------------------------------------------------- -->
+<!-- Warning: The two script blocks below must remain inline. Moving them to an external -->
+<!-- JavaScript include file can cause serious problems with cross-domain tracking.      -->
+<!-- ----------------------------------------------------------------------------------- -->
+<script type="text/javascript">
+ //<![CDATA[
+     var _tag=new WebTrends();
+     _tag.dcsGetId();
+     //]]>
+</script>
+<script type="text/javascript">
+ //<![CDATA[
+     _tag.dcsCustom=function(){
+     // Add custom parameters here.
+     //Removing prefix logic due to tag instability
+     //_tag.DCSext.param_name=param_value;
+     // var wtprefix = document.searchform.prefix.value;
+     //    if (wtprefix != "") {
+     //        _tag.WT.z_prefix = wtprefix;
+     //    }
+     }
+     _tag.dcsCollect();
+     //]]>
+</script>
+<noscript>
+ <div>
+  <img alt="DCSIMG" height="1" id="DCSIMG" src="http://statse.webtrendslive.com/dcs3ww1g3vz5bdefw9oxsrhvi_2d3m/njs.gif?dcsuri=/nojavascript&amp;WT.js=No&amp;WT.tv=9.3.0&amp;WT.dcssip=http://provider.bcbs.com/" width="1"/>
+ </div>
+</noscript>
+<!-- END OF SmartSource Data Collector TAG -->
