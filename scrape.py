@@ -2,6 +2,7 @@ import mechanize
 import cookielib
 import time
 import sys
+import os
 
 from parse import print_results_from_page, get_number_of_pages
 from user_agent import get_agent
@@ -24,9 +25,9 @@ br.set_handle_robots(False)
 br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
 # Want debugging messages?
-br.set_debug_http(True)
-br.set_debug_redirects(True)
-br.set_debug_responses(True)
+# br.set_debug_http(True)
+# br.set_debug_redirects(True)
+# br.set_debug_responses(True)
 
 br.addheaders = [('User-agent', get_agent())]
 r = br.open('http://provider.bcbs.com/Search/')
@@ -49,6 +50,7 @@ br.form['Product'] = ['PPO']
 br.submit()
 
 html = br.response().read()
+os.remove('results.csv')
 
 print_results_from_page(html)
 num_pages = get_number_of_pages(html)

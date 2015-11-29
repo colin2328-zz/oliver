@@ -1,5 +1,8 @@
 from bs4 import BeautifulSoup
 import re
+import csv
+
+state = set()
 
 
 def _get_contact_info(div_soup):
@@ -18,9 +21,12 @@ def _get_contact_info(div_soup):
     # construct address data structure
     breaks = para.findAll('br')
     address_lines = []
+    address_start = False
     for b in breaks:
         line = b.next.strip()
-        if line:
+        if _is_address(line):
+            address_start = True
+        if address_start and line:
             address_lines.append(line)
         if _has_zipcode(line):
             break
@@ -63,6 +69,21 @@ def _get_address_city_state_zip(address_lines):
     return address, city, state, zipcode
 
 
+def _add_to_set(results):
+    hashed = _hash(results)
+    if hashed not in state:
+        state.add(hashed)
+
+
+def _is_in_set(results):
+    hashed = _hash(results)
+    return hashed in state
+
+
+def _hash(results):
+    return ' '.join(sorted([results[0], results[1], results[-1]]))
+
+
 def _get_phone_number(string):
     numbers = re.findall(r'\(\d{3}\) \d{3}-\d{4}', unicode(string))
     return numbers[0] if numbers else ''
@@ -74,11 +95,25 @@ def _has_zipcode(string):
     return len(target) == 5 and target.isdigit()
 
 
-def print_results_from_page(html):
+def _is_address(string):
+    words = string
+    return len(words) > 1 and words[0].isdigit()
+
+
+def print_results_from_page(html, debug=False):
     soup = BeautifulSoup(html, 'html.parser')
     divs = soup.findAll('div', {'class': 'col8 result group'})
-    for div in divs:
-        print _get_contact_info(div)
+    with open('results.csv', 'a') as fp:
+        f = csv.writer(fp, delimiter=',')
+        for div in divs:
+            results = _get_contact_info(div)
+            if _is_in_set(results):
+                continue
+            _add_to_set(results)
+            if debug:
+                print results
+            else:
+                f.writerow(list(results))
 
 
 def get_number_of_pages(html):
@@ -89,7 +124,7 @@ def get_number_of_pages(html):
     return end_page
 
 if __name__ == '__main__':
-    with open("error.html", "r") as f:
+    with open("scrape.html", "r") as f:
         html = f.read()
 
-    print_results_from_page(html)
+    print_results_from_page(html, debug=True)
