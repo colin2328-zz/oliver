@@ -1,5 +1,10 @@
 import mechanize
 import cookielib
+import time
+import sys
+
+from parse import print_results_from_page, get_number_of_pages
+from user_agent import get_agent
 
 # Browser
 br = mechanize.Browser()
@@ -19,16 +24,20 @@ br.set_handle_robots(False)
 br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
 # Want debugging messages?
-# br.set_debug_http(True)
-# br.set_debug_redirects(True)
-# br.set_debug_responses(True)
+br.set_debug_http(True)
+br.set_debug_redirects(True)
+br.set_debug_responses(True)
 
-user_agent = 'Mozilla/4.0 (compatible; MSIE 6.1; Windows XP)'
-br.addheaders = [('User-agent', user_agent)]
+br.addheaders = [('User-agent', get_agent())]
 r = br.open('http://provider.bcbs.com/Search/')
 
-
-br.select_form(nr=0)
+try:
+    br.select_form(nr=0)
+except mechanize.FormNotFoundError:
+    print 'try refreshing browser- it thinks we\'re a bot'
+    with open("error.html", "w") as f:
+            f.write(br.response().read())
+    sys.exit()
 
 
 br.form['Keyword'] = 'lpc'
@@ -41,6 +50,18 @@ br.submit()
 
 html = br.response().read()
 
-text_file = open("scrape.html", "w")
-text_file.write(html)
-text_file.close()
+print_results_from_page(html)
+num_pages = get_number_of_pages(html)
+
+for page_num in range(2, num_pages + 1):
+    time.sleep(0.5)
+    url = 'http://provider.bcbs.com/ReturnToResults?PageRequested={}'.format(page_num)
+
+    br.open(url)
+    html = br.response().read()
+    try:
+        print_results_from_page(html)
+    except Exception:
+        with open("error.html", "w") as f:
+            f.write(html)
+            break

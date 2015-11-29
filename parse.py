@@ -2,14 +2,16 @@ from bs4 import BeautifulSoup
 import re
 
 
-def get_contact_info(div_soup):
+def _get_contact_info(div_soup):
+    """First, Last, Credentials, Email, Phone number, Address, City, State, Zip"""
     name_string = div_soup.h3.a.text
+    first, last, creds = _get_first_last_credentials(name_string)
 
     # find paragraph with contact info
     ps = div_soup.findAll('p')
     para = None
     for p in ps:
-        if p.br:
+        if 'ph: (' in p.text.lower() and p.br:
             para = p
             break
 
@@ -23,7 +25,6 @@ def get_contact_info(div_soup):
         if _has_zipcode(line):
             break
 
-    first, last, creds = _get_first_last_credentials(name_string)
     phone_number = _get_phone_number(div_soup)
     address, city, state, zipcode = _get_address_city_state_zip(address_lines)
 
@@ -72,16 +73,23 @@ def _has_zipcode(string):
     target = words[-1]
     return len(target) == 5 and target.isdigit()
 
-text_file = open("scrape.html", "r")
-html = text_file.read()
-text_file.close()
 
-soup = BeautifulSoup(html, 'html.parser')
-divs = soup.findAll('div', {'class': 'col8 result group'})
-for div in divs:
-    print get_contact_info(div)
-    # break
+def print_results_from_page(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    divs = soup.findAll('div', {'class': 'col8 result group'})
+    for div in divs:
+        print _get_contact_info(div)
 
 
+def get_number_of_pages(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    pagination_div = soup.find('div', {'class': 'pagination pull-right'})
+    last_anchor = pagination_div.find('a', {'title': 'Load last set of results'})
+    end_page = int(last_anchor.text)
+    return end_page
 
-# First, Last, Credentials, Email, Phone number, Address, City, State, Zip
+if __name__ == '__main__':
+    with open("error.html", "r") as f:
+        html = f.read()
+
+    print_results_from_page(html)
