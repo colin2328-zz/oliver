@@ -9,7 +9,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     city_name = ' '.join(args.city)
     print('Getting results for {}'.format(city_name))
-    save_results()
+    # save_results(city_name)
     print('Populating \'Provider List\' Google doc')
     num_providers = populate_gdoc()
     print('Populated document with {} providers'.format(num_providers))
