@@ -1,8 +1,12 @@
 # oliver
 Automate Oliver's job
 
-To run:
+## To Run
+~~~ sh
 git clone <repo_url>
-save credentials to creds.json
+~~~
+save credentials file as creds.json
+~~~ sh
 pip install -r requirements.txt
 python magic.py <city_name>
+~~~
