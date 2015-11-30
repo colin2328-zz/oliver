@@ -3,13 +3,12 @@ import cookielib
 import time
 import sys
 import os
-import argparse
 
 from parse import print_results_from_page, get_number_of_pages
 from user_agent import get_agent
 
 
-def save_results(city_name='San Francisco'):
+def save_results(city_name):
     # Browser
     br = mechanize.Browser()
 
@@ -68,9 +67,3 @@ def save_results(city_name='San Francisco'):
             with open("error.html", "w") as f:
                 f.write(html)
                 break
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get results for a city.')
-    parser.add_argument('--city', nargs='+', help='City to search for')
-    args = parser.parse_args()
-    save_results(city_name=' '.join(args.city))

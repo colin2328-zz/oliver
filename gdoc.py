@@ -36,3 +36,4 @@ def populate_gdoc():
 
     assert (i == len(cell_list))
     worksheet.update_cells(cell_list)
+    return row_count
