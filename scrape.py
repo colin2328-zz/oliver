@@ -8,7 +8,7 @@ from parse import print_results_from_page, get_number_of_pages
 from user_agent import get_agent
 
 
-def save_results(city_name):
+def save_results(city_name, doctor_type):
     # Browser
     br = mechanize.Browser()
 
@@ -42,7 +42,7 @@ def save_results(city_name):
                 f.write(br.response().read())
         sys.exit()
 
-    br.form['Keyword'] = 'lpc'
+    br.form['Keyword'] = doctor_type
     br.form['Address'] = city_name
     br.form['Proximity'] = ['50']
     br.form['Product'] = ['PPO']
