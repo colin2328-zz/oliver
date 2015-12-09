@@ -50,7 +50,11 @@ def save_results(city_name, doctor_type):
     br.submit()
 
     html = br.response().read()
-    os.remove('results.csv')
+
+    try:
+        os.remove('results.csv')
+    except OSError:
+        pass
 
     print_results_from_page(html)
     num_pages = get_number_of_pages(html)
