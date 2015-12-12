@@ -4,7 +4,7 @@ import time
 import sys
 import os
 
-from parse import print_results_from_page, get_number_of_pages
+from parse import save_results_from_page, get_number_of_pages
 from user_agent import get_agent
 
 
@@ -55,8 +55,12 @@ def save_results(city_name, doctor_type):
         os.remove('results.csv')
     except OSError:
         pass
+    try:
+        os.remove('error.html')
+    except OSError:
+        pass
 
-    print_results_from_page(html)
+    errors = save_results_from_page(html, page_num=1)
     num_pages = get_number_of_pages(html)
 
     for page_num in range(2, num_pages + 1):
@@ -65,9 +69,7 @@ def save_results(city_name, doctor_type):
 
         br.open(url)
         html = br.response().read()
-        try:
-            print_results_from_page(html)
-        except Exception:
-            with open("error.html", "w") as f:
-                f.write(html)
-                break
+        errors += save_results_from_page(html, page_num=page_num)
+
+    if errors:
+        print 'Encountered {} errors parsing. Please check error.html'.format(errors)

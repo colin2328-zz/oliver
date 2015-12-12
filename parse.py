@@ -20,16 +20,26 @@ def _get_contact_info(div_soup):
 
     # construct address data structure
     breaks = para.findAll('br')
-    address_lines = []
-    address_start = False
-    for b in breaks:
-        line = b.previous.strip()
+    lines = []
+    for brk in breaks:
+        line = brk.previousSibling
+        if not line:
+            continue
+        try:
+            line = line.strip()
+        except TypeError:
+            line = line.text.strip()
+        lines.append(line)
+
+    address_start_found = False
+    for index, line in enumerate(lines):
         if _is_address(line):
-            address_start = True
-        if address_start and line:
-            address_lines.append(line)
+            start_idx = index
+            address_start_found = True
         if _has_zipcode(line):
-            break
+            end_idx = index
+
+    address_lines = lines[start_idx:end_idx + 1] if address_start_found else lines[end_idx - 1:end_idx + 1]
 
     phone_number = _get_phone_number(div_soup)
     address, city, state, zipcode = _get_address_city_state_zip(address_lines)
@@ -100,31 +110,45 @@ def _is_address(string):
     return len(words) > 1 and words[0].isdigit()
 
 
-def print_results_from_page(html, debug=False):
+def save_results_from_page(html, debug=False, page_num=None):
+    errors = 0
     soup = BeautifulSoup(html, 'html.parser')
     divs = soup.findAll('div', {'class': 'col8 result group'})
-    with open('results.csv', 'a') as fp:
-        f = csv.writer(fp, delimiter=',')
-        for div in divs:
-            results = _get_contact_info(div)
-            if _is_in_set(results):
-                continue
-            _add_to_set(results)
+    with open('results.csv', 'a') as rf, open("error.html", "a") as ef:
+        results_csv = csv.writer(rf, delimiter=',')
+        for index, div in enumerate(divs):
             if debug:
-                print results
+                results = _get_contact_info(div)
+                print(results)
             else:
-                f.writerow(list(results))
+                try:
+                    results = _get_contact_info(div)
+                except Exception:
+                    ef.write('error with entry {}, {}, on page {}:\n'.format(div.h3.a.text, index, page_num))
+                    ef.write(str(div))
+                    errors += 1
+                    continue
+
+                if _is_in_set(results):
+                    continue
+                _add_to_set(results)
+                results_csv.writerow(list(results))
+        return errors
 
 
 def get_number_of_pages(html):
     soup = BeautifulSoup(html, 'html.parser')
     pagination_div = soup.find('div', {'class': 'pagination pull-right'})
     last_anchor = pagination_div.find('a', {'title': 'Load last set of results'})
+    if not last_anchor:
+        aas = pagination_div.find_all('a')
+        last_anchor = aas[-2]
     end_page = int(last_anchor.text)
+
     return end_page
 
 if __name__ == '__main__':
-    with open("scrape.html", "r") as f:
+    with open("error.html", "r") as f:
         html = f.read()
 
-    print_results_from_page(html, debug=True)
+    save_results_from_page(html, debug=True)

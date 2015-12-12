@@ -2,3 +2,5 @@
 *.sublime-workspace
 *.pyc
 creds.json
+results.csv
+scrape.html
