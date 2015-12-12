@@ -23,7 +23,7 @@ def _get_contact_info(div_soup):
     address_lines = []
     address_start = False
     for b in breaks:
-        line = b.next.strip()
+        line = b.previous.strip()
         if _is_address(line):
             address_start = True
         if address_start and line:
