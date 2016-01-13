@@ -37,7 +37,7 @@ def save_results(city_name, doctor_type):
     try:
         br.select_form(nr=0)
     except mechanize.FormNotFoundError:
-        print 'try refreshing browser- it thinks we\'re a bot'
+        print('try refreshing browser- it thinks we\'re a bot')
         with open("error.html", "w") as f:
                 f.write(br.response().read())
         sys.exit()
@@ -72,4 +72,4 @@ def save_results(city_name, doctor_type):
         errors += save_results_from_page(html, page_num=page_num)
 
     if errors:
-        print 'Encountered {} errors parsing. Please check error.html'.format(errors)
+        print('Encountered {} errors parsing. Please check error.html'.format(errors))
