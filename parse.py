@@ -139,6 +139,8 @@ def save_results_from_page(html, debug=False, page_num=None):
 def get_number_of_pages(html):
     soup = BeautifulSoup(html, 'html.parser')
     pagination_div = soup.find('div', {'class': 'pagination pull-right'})
+    if not pagination_div:
+        return 1
     last_anchor = pagination_div.find('a', {'title': 'Load last set of results'})
     if not last_anchor:
         aas = pagination_div.find_all('a')
